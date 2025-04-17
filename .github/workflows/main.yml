@@ -1,0 +1,23 @@
+name: Run Shell Scripts
+
+on:
+ workflow_dispatch:
+
+jobs:
+  run-shell-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Make scripts executable
+        run: |
+          chmod +x start.sh
+          chmod +x main.sh
+
+      - name: Run start.sh
+        run: ./start.sh
+
+      - name: Run main.sh
+        run: ./main.sh
