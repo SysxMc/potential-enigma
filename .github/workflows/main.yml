@@ -1,4 +1,4 @@
-name: Run Shell Scripts
+name: Run Shell Scripts and Save Artifacts
 
 on:
  workflow_dispatch:
@@ -21,3 +21,15 @@ jobs:
 
       - name: Run main.sh
         run: ./main.sh
+
+      - name: Upload sources.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: sources
+          path: sources.txt
+
+      - name: Upload links.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: links
+          path: links.txt
