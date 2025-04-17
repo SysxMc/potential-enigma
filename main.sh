@@ -14,7 +14,7 @@ echo "Step 1: Collecting watch list URLs from pages 1 to 70..."
 for page in {1..70}; do
     url="https://missav.ws/en/playlists/dprelff6?page=$page"
     echo "Processing page $page..."
-    !crwl "$url" -o md-fit | \
+    crwl "$url" -o md-fit | \
     awk '/Playlist: Spidys Watch List/,/Back to top/' | \
     grep -oP 'https://missav\.ws/[^\s)"]+' >> "$sources_file"
 done
