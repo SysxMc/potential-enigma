@@ -11,7 +11,7 @@ mkdir -p "$temp_dir"
 
 echo "Step 1: Collecting watch list URLs from pages 1 to 70..."
 
-for page in {1..70}; do
+for page in {1..10}; do
     url="https://missav.ws/en/playlists/dprelff6?page=$page"
     echo "Processing page $page..."
     crwl "$url" -o md-fit | \
@@ -28,7 +28,7 @@ echo "Step 2: Extracting surrit.com links from each video page..."
 # Function to process each URL
 extract_links() {
     url="$1"
-    crwl "$url" | grep -oP '"(https://surrit\.com[^"]+)"' | tr -d '"' || true
+    crwl "$url" | grep -oP '"(https://surrit\.com[^"]+)"' | tr -d '"' | sed -n '2p' || true
 }
 
 export -f extract_links
