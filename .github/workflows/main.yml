@@ -1,7 +1,7 @@
 name: Run Shell Scripts and Save Artifacts
 
 on:
- workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   run-shell-scripts:
@@ -22,14 +22,19 @@ jobs:
       - name: Run main.sh
         run: ./main.sh
 
-      - name: Upload sources.txt
-        uses: actions/upload-artifact@v4
-        with:
-          name: sources
-          path: sources.txt
+      - name: Move sources.txt and links.txt to docs folder
+        run: |
+          mkdir -p docs
+          mv sources.txt docs/sources.txt
+          mv links.txt docs/links.txt
 
-      - name: Upload links.txt
-        uses: actions/upload-artifact@v4
-        with:
-          name: links
-          path: links.txt
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Commit and push changes
+        run: |
+          git add docs/sources.txt docs/links.txt
+          git commit -m "Add sources.txt and links.txt to docs folder"
+          git push
