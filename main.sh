@@ -11,7 +11,7 @@ mkdir -p "$temp_dir"
 
 echo "Step 1: Collecting watch list URLs from pages 1 to 70..."
 
-for page in {1..10}; do
+for page in {1..70}; do
     url="https://missav.ws/en/playlists/dprelff6?page=$page"
     echo "Processing page $page..."
     crwl "$url" -o md-fit | \
