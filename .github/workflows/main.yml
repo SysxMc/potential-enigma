@@ -3,6 +3,9 @@ name: Run Shell Scripts and Save Artifacts
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  
 jobs:
   run-shell-scripts:
     runs-on: ubuntu-latest
