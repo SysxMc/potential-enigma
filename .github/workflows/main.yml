@@ -30,9 +30,10 @@ jobs:
       - name: Move sources.txt and links.txt to docs folder
         run: |
           mkdir -p docs
+          mv failed.txt docs/failed.txt
+          mv final_links.csv docs/links.csv
           mv sources.txt docs/sources.txt
-          mv links.txt docs/links.txt
-
+          
       - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions"
@@ -40,6 +41,6 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git add docs/sources.txt docs/links.txt
+          git add docs/sources.txt docs/failed.txt docs/links.csv
           git commit -m "Add sources.txt and links.txt to docs folder"
           git push
