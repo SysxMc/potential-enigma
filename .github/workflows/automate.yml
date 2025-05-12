@@ -18,7 +18,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y ffmpeg aria2
+          sudo apt install -y aria2
           pip install yt-dlp requests
 
       - name: Download Videos with yt-dlp + aria2c
@@ -27,21 +27,13 @@ jobs:
           while IFS= read -r url; do
             yt-dlp \
               --external-downloader aria2c \
-              --external-downloader-args "-x 16 -j 16 -s 16 -k 1M" \
+              --external-downloader-args "-x 20 -j 20 -s 20 -k 100M" \
               -o "downloads/%(title)s.%(ext)s" "$url"
           done < links.txt
 
-      - name: Compress Videos with FFmpeg (libx264)
-        run: |
-          mkdir -p compressed
-          for file in downloads/*; do
-            filename=$(basename "$file")
-            ffmpeg -i "$file" -c:v libx264 -preset fast -crf 23 -c:a copy "compressed/$filename"
-          done
-
       - name: Upload to PixelDrain
         run: |
-          for file in compressed/*; do
+          for file in downloads/*; do
             curl -X POST -F "file=@$file" \
               -H "Authorization: Bearer $PIXELDRAIN_API_KEY" \
               https://pixeldrain.com/api/file
