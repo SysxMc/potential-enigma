@@ -1,16 +1,17 @@
 name: Download and Upload Jav Videos
 
 on:
-  schedule:
-    - cron: '0 */24 * * *'  # Run every 6 hours
   workflow_dispatch:
-
+  
+permissions:
+  contents: write
+  
 jobs:
   process_videos:
     runs-on: ubuntu-latest
     env:
       PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
-      
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -18,24 +19,78 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y aria2
-          pip install yt-dlp requests
+          sudo apt install -y aria2 jq
+          pip install yt-dlp
 
-      - name: Download Videos with yt-dlp + aria2c
+      - name: Process m3u8 links
         run: |
           mkdir -p downloads
-          while IFS= read -r url; do
+          touch results.csv
+          echo "source_url,m3u8_url,pixeldrain_url,size,title,image,description" > results.csv.new
+
+          # Function to convert bytes to human-readable format
+          human_readable() {
+            b=$1
+            d=''; s=0; S=(Bytes KB MB GB TB)
+            while ((b >= 1024 && s < ${#S[@]}-1)); do
+              d="$(printf ".%02d" $((b % 1024 * 100 / 1024)))"
+              b=$((b / 1024))
+              s=$((s + 1))
+            done
+            echo "$b$d ${S[$s]}"
+          }
+
+          # Create temp file of seen combinations
+          awk -F, 'NR > 1 { print $1 "," $2 }' results.csv >> seen_links.txt || true
+
+          count=0
+
+          while IFS=',' read -r source_url m3u8_url && [ $count -lt 20 ]; do
+            combo="$source_url,$m3u8_url"
+            if grep -Fq "$combo" seen_links.txt; then
+              echo "Skipping already processed: $combo"
+              continue
+            fi
+
+            echo "Fetching metadata for: $source_url"
+            meta=$(curl -s "https://meta.mrspidyxd.workers.dev/?url=$source_url")
+            title=$(echo "$meta" | jq -r '.title // "N/A"')
+            filename=$(echo "$title" | cut -d' ' -f1 | tr -dc '[:alnum:]_-')
+            image=$(echo "$meta" | jq -r '.image // "N/A"')
+            description=$(echo "$meta" | jq -r '."og:description" // "N/A"')
+
+            echo "Downloading from: $m3u8_url as $filename"
             yt-dlp \
+              --quiet \
+              --no-warnings \
               --external-downloader aria2c \
               --external-downloader-args "-x 16 -j 16 -s 16 -k 100M" \
-              -o "downloads/%(title)s.%(ext)s" "$url"
-          done < links.txt
+              -o "downloads/${filename}.%(ext)s" "$m3u8_url"
 
-      - name: Upload to PixelDrain
+            for file in downloads/*; do
+              echo "Uploading $file..."
+              response=$(curl -s -T "$file" -u ":$PIXELDRAIN_API_KEY" https://pixeldrain.com/api/file/)
+              id=$(echo "$response" | jq -r '.id')
+              size_bytes=$(echo "$response" | jq -r '.size')
+              size_human=$(human_readable "$size_bytes")
+              pixeldrain_url="https://pixeldrain.com/u/$id"
+
+              echo "\"$source_url\",\"$m3u8_url\",\"$pixeldrain_url\",\"$size_human\",\"$title\",\"$image\",\"$description\"" >> results.csv.new
+
+              rm -f "$file"
+            done
+
+            count=$((count + 1))
+          done < docs/links.csv
+
+          # Merge new results with old results
+          tail -n +2 results.csv >> results.csv.new || true
+          mv results.csv.new results.csv
+      - name: Commit results.csv back to repository
         run: |
-           for file in downloads/*; do
-               echo "Uploading $file..."
-               curl -T "$file" \
-               -u ":$PIXELDRAIN_API_KEY" \
-                https://pixeldrain.com/api/file/
-           done
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
+          git pull --rebase
+          git add results.csv
+          git commit -m "Update results.csv [auto]" || echo "No changes to commit"
+          git push
