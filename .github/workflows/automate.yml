@@ -35,6 +35,6 @@ jobs:
         run: |
           for file in downloads/*; do
             curl -X POST -F "file=@$file" \
-              -H "Authorization: Bearer $PIXELDRAIN_API_KEY" \
+              -H "Authorization: "Basic "+btoa(":"+$PIXELDRAIN_API_KEY) \
               https://pixeldrain.com/api/file
           done
