@@ -33,8 +33,9 @@ jobs:
 
       - name: Upload to PixelDrain
         run: |
-          for file in downloads/*; do
-            curl -X POST -F "file=@$file" \
-              -H "Authorization: "Basic "+btoa(":"+$PIXELDRAIN_API_KEY) \
-              https://pixeldrain.com/api/file
-          done
+           for file in downloads/*; do
+               echo "Uploading $file..."
+               curl -T "$file" \
+               -u ":$PIXELDRAIN_API_KEY" \
+                https://pixeldrain.com/api/file/
+           done
