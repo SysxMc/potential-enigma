@@ -1,16 +1,16 @@
 name: Download, Compress, and Upload Videos
 
-
 on:
-  schedule:
-    - cron: '0 */24 * * *'  # Run every 6 hours
-  workflow_dispatch:
+  push:
+    paths:
+      - 'links.txt'
 
 jobs:
   process_videos:
     runs-on: ubuntu-latest
     env:
       PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
+      
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -21,14 +21,17 @@ jobs:
           sudo apt install -y ffmpeg aria2
           pip install yt-dlp requests
 
-      - name: Download Videos
+      - name: Download Videos with yt-dlp + aria2c
         run: |
           mkdir -p downloads
           while IFS= read -r url; do
-            yt-dlp "$url" -o "downloads/%(title)s.%(ext)s"
+            yt-dlp \
+              --external-downloader aria2c \
+              --external-downloader-args "-x 16 -j 16 -s 16 -k 1M" \
+              -o "downloads/%(title)s.%(ext)s" "$url"
           done < links.txt
 
-      - name: Compress Videos
+      - name: Compress Videos with FFmpeg (libx264)
         run: |
           mkdir -p compressed
           for file in downloads/*; do
@@ -39,5 +42,7 @@ jobs:
       - name: Upload to PixelDrain
         run: |
           for file in compressed/*; do
-            curl -X POST -F "file=@$file" -H "Authorization: Bearer $PIXELDRAIN_API_KEY" https://pixeldrain.com/api/file
+            curl -X POST -F "file=@$file" \
+              -H "Authorization: Bearer $PIXELDRAIN_API_KEY" \
+              https://pixeldrain.com/api/file
           done
