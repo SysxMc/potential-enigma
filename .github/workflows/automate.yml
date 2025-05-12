@@ -1,9 +1,9 @@
 name: Download, Compress, and Upload Videos
 
 on:
-  push:
-    paths:
-      - 'links.txt'
+  schedule:
+    - cron: '0 */24 * * *'  # Run every 6 hours
+  workflow_dispatch:
 
 jobs:
   process_videos:
