@@ -99,7 +99,7 @@ async def fetch_posts(session, url):
     
     return posts_data
 
-async def scrape_jav_guru(session, num_pages_to_scrape=10):
+async def scrape_jav_guru(session, num_pages_to_scrape=5):
     base_url = "https://jav.guru/"
     all_posts = []
 
@@ -120,7 +120,7 @@ async def scrape_jav_guru(session, num_pages_to_scrape=10):
     
     return all_posts
 
-async def scrape_onejav(session, num_load_more_clicks=20): # Set to 20 for ~3 weeks of data
+async def scrape_onejav(session, num_load_more_clicks=2): # Set to 20 for ~3 weeks of data
     base_url = "https://onejav.com/"
     all_posts = []
     
@@ -232,7 +232,7 @@ async def main():
 
     async with aiohttp.ClientSession() as session:
         # Scrape jav.guru
-        jav_guru_posts = await scrape_jav_guru(session, num_pages_to_scrape=20)
+        jav_guru_posts = await scrape_jav_guru(session, num_pages_to_scrape=10)
         if jav_guru_posts:
             all_scraped_data['jav_guru'] = {
                 "metadata": {
@@ -247,7 +247,7 @@ async def main():
             print("No posts fetched from jav.guru.")
 
         # Scrape onejav.com
-        onejav_posts = await scrape_onejav(session, num_load_more_clicks=20) # Fetch ~3 weeks of data
+        onejav_posts = await scrape_onejav(session, num_load_more_clicks=10) # Fetch ~3 weeks of data
         if onejav_posts:
             all_scraped_data['onejav_com'] = {
                 "metadata": {
